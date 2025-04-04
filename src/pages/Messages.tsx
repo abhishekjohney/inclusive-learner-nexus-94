@@ -322,19 +322,23 @@ const Messages = () => {
           queryClient.invalidateQueries({ queryKey: ['conversations', user.id] });
           
           if (activeContactId && 
-             (payload.new.sender_id === activeContactId || 
-              payload.new.recipient_id === activeContactId)) {
+             (payload.new && (
+              (payload.new as any).sender_id === activeContactId || 
+              (payload.new as any).recipient_id === activeContactId)
+             )) {
             queryClient.invalidateQueries({ queryKey: ['conversation', user.id, activeContactId] });
           }
           
           // Show toast notification for new messages
-          if (payload.eventType === 'INSERT' && payload.new.sender_id !== user.id) {
+          if (payload.eventType === 'INSERT' && 
+              payload.new && 
+              (payload.new as any).sender_id !== user.id) {
             const senderName = 'New message'; // This could be improved by fetching sender name
             toast({
               title: senderName,
-              description: payload.new.content.length > 30 
-                ? payload.new.content.substring(0, 30) + '...'
-                : payload.new.content,
+              description: (payload.new as any).content?.length > 30 
+                ? (payload.new as any).content.substring(0, 30) + '...'
+                : (payload.new as any).content,
             });
           }
         }
