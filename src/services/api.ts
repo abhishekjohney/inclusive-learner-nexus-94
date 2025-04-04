@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 // Types
@@ -89,13 +88,25 @@ export const contentService = {
   },
   
   uploadContent: async (content: Omit<LearningContent, 'id' | 'created_at' | 'updated_at'>) => {
-    const { data, error } = await supabase
-      .from('learning_content')
-      .insert([content])
-      .select();
-    
-    if (error) throw error;
-    return data[0] as LearningContent;
+    try {
+      console.log("Attempting to upload content:", content);
+      
+      const { data, error } = await supabase
+        .from('learning_content')
+        .insert([content])
+        .select();
+      
+      if (error) {
+        console.error("Error uploading content:", error);
+        throw error;
+      }
+      
+      console.log("Content uploaded successfully:", data);
+      return data[0] as LearningContent;
+    } catch (err) {
+      console.error("Upload content error:", err);
+      throw err;
+    }
   }
 };
 

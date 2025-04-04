@@ -9,4 +9,29 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+// Enable Supabase Realtime functionality for learning_content table
+const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  realtime: {
+    params: {
+      eventsPerSecond: 10,
+    },
+  },
+});
+
+// Run this statement to enable realtime on all tables
+(async () => {
+  // Enable realtime for specific tables
+  await supabase.channel('custom-all-channel')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, payload => {
+      console.log('Change received!', payload);
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'learning_content' }, payload => {
+      console.log('Learning content changed:', payload);
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, payload => {
+      console.log('Profiles changed:', payload);
+    })
+    .subscribe();
+})();
+
+export { supabase };

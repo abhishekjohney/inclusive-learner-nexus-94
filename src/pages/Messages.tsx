@@ -68,6 +68,7 @@ const Messages = () => {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [activeContactId, setActiveContactId] = useState<string | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   
   // Form for new message
   const form = useForm<z.infer<typeof formSchema>>({
@@ -78,6 +79,24 @@ const Messages = () => {
     },
   });
 
+  // Fetch all users for new message form
+  const { data: users, isLoading: usersLoading } = useQuery({
+    queryKey: ['users'],
+    queryFn: async () => {
+      if (!user) return [];
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .neq('id', user.id);  // Don't include the current user
+        
+      if (error) throw error;
+      
+      return data || [];
+    },
+    enabled: !!user,
+  });
+  
   // Fetch conversations (unique users the current user has messaged with)
   const { data: conversations, isLoading: conversationsLoading } = useQuery({
     queryKey: ['conversations', user?.id],
@@ -175,24 +194,6 @@ const Messages = () => {
     },
     enabled: !!user && !!activeContactId,
   });
-  
-  // Fetch all users for new message form
-  const { data: users } = useQuery({
-    queryKey: ['users'],
-    queryFn: async () => {
-      if (!user) return [];
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .neq('id', user.id);  // Don't include the current user
-        
-      if (error) throw error;
-      
-      return data || [];
-    },
-    enabled: !!user,
-  });
 
   // Get current user profile
   const { data: currentUserProfile } = useQuery({
@@ -225,7 +226,8 @@ const Messages = () => {
           recipient_id: recipientId,
           content,
           read: false,
-        });
+        })
+        .select();
         
       if (error) throw error;
 
@@ -266,7 +268,7 @@ const Messages = () => {
     
     // Reset form and close sheet
     form.reset();
-    // This would be handled by sheet's onOpenChange in a real implementation
+    setIsSheetOpen(false);
   };
   
   // Handle sending a message in active conversation
@@ -301,6 +303,49 @@ const Messages = () => {
     return contactName.toLowerCase().includes(search.toLowerCase());
   });
 
+  // Set up realtime subscription for messages
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('messages-channel')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+          filter: `recipient_id=eq.${user.id}`,
+        },
+        (payload) => {
+          // Invalidate queries to refresh data
+          queryClient.invalidateQueries({ queryKey: ['conversations', user.id] });
+          
+          if (activeContactId && 
+             (payload.new.sender_id === activeContactId || 
+              payload.new.recipient_id === activeContactId)) {
+            queryClient.invalidateQueries({ queryKey: ['conversation', user.id, activeContactId] });
+          }
+          
+          // Show toast notification for new messages
+          if (payload.eventType === 'INSERT' && payload.new.sender_id !== user.id) {
+            const senderName = 'New message'; // This could be improved by fetching sender name
+            toast({
+              title: senderName,
+              description: payload.new.content.length > 30 
+                ? payload.new.content.substring(0, 30) + '...'
+                : payload.new.content,
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, activeContactId, queryClient]);
+
   return (
     <DashboardLayout>
       <div className="h-full flex flex-col">
@@ -308,7 +353,7 @@ const Messages = () => {
           <div className="flex items-center justify-between">
             <h1 className="text-2xl md:text-3xl font-bold">Messages</h1>
             
-            <Sheet>
+            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
               <SheetTrigger asChild>
                 <Button>
                   <Edit className="mr-2 h-4 w-4" />
@@ -339,11 +384,20 @@ const Messages = () => {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {users?.map((user) => (
-                                  <SelectItem key={user.id} value={user.id}>
-                                    {getContactName(user)} ({user.role})
-                                  </SelectItem>
-                                ))}
+                                {usersLoading ? (
+                                  <div className="flex items-center justify-center p-4">
+                                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                    <span>Loading users...</span>
+                                  </div>
+                                ) : users && users.length > 0 ? (
+                                  users.map((user) => (
+                                    <SelectItem key={user.id} value={user.id}>
+                                      {`${user.first_name || ''} ${user.last_name || ''}`.trim() || 'User'} ({user.role})
+                                    </SelectItem>
+                                  ))
+                                ) : (
+                                  <div className="p-4 text-center text-muted-foreground">No users found</div>
+                                )}
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -569,75 +623,12 @@ const Messages = () => {
                     </p>
                   </CardContent>
                   <CardFooter>
-                    <Sheet>
-                      <SheetTrigger asChild>
-                        <Button className="w-full">Start New Conversation</Button>
-                      </SheetTrigger>
-                      <SheetContent>
-                        <SheetHeader>
-                          <SheetTitle>New Message</SheetTitle>
-                          <SheetDescription>
-                            Send a message to a student or teacher
-                          </SheetDescription>
-                        </SheetHeader>
-                        
-                        <div className="py-6">
-                          <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmitNewMessage)} className="space-y-6">
-                              <FormField
-                                control={form.control}
-                                name="recipient"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Recipient</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                      <FormControl>
-                                        <SelectTrigger>
-                                          <SelectValue placeholder="Select recipient" />
-                                        </SelectTrigger>
-                                      </FormControl>
-                                      <SelectContent>
-                                        {users?.map((user) => (
-                                          <SelectItem key={user.id} value={user.id}>
-                                            {getContactName(user)} ({user.role})
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={form.control}
-                                name="message"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Message</FormLabel>
-                                    <FormControl>
-                                      <Textarea 
-                                        placeholder="Type your message here" 
-                                        className="min-h-[120px]"
-                                        {...field} 
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <Button 
-                                type="submit" 
-                                className="w-full" 
-                                disabled={sendMessageMutation.isPending}
-                              >
-                                {sendMessageMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Send Message
-                              </Button>
-                            </form>
-                          </Form>
-                        </div>
-                      </SheetContent>
-                    </Sheet>
+                    <Button 
+                      className="w-full"
+                      onClick={() => setIsSheetOpen(true)}
+                    >
+                      Start New Conversation
+                    </Button>
                   </CardFooter>
                 </Card>
               </div>

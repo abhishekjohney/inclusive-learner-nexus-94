@@ -1,5 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,39 +17,60 @@ import { Switch } from "@/components/ui/switch";
 import { Pencil, Save, BookOpen, Award, Clock, BarChart3, Brain, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ProfileLearningTracks from '@/components/profile/ProfileLearningTracks';
+import { Loader2 } from 'lucide-react';
 
 const Profile = () => {
+  const { user } = useAuth();
   const { toast } = useToast();
   const [editMode, setEditMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const userRole = localStorage.getItem('userRole') || 'student';
   
   const [profileData, setProfileData] = useState({
     firstName: '',
     lastName: '',
     email: '',
-    role: userRole,
+    role: '',
     bio: '',
     notificationsEnabled: true,
     darkModeEnabled: false
   });
 
+  // Fetch user profile data from Supabase
+  const { data: profile, isLoading: isLoadingProfile } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) throw new Error('User not authenticated');
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+        
+      if (error) {
+        console.error('Error fetching profile:', error);
+        throw error;
+      }
+      
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Update local state when profile data is fetched
   useEffect(() => {
-    // Simulate fetching profile data
-    const fetchedData = {
-      firstName: userRole === 'student' ? 'Alex' : 'Professor',
-      lastName: userRole === 'student' ? 'Johnson' : 'Williams',
-      email: userRole === 'student' ? 'alex.j@example.edu' : 'p.williams@example.edu',
-      role: userRole,
-      bio: userRole === 'student' 
-        ? 'Computer Science major with interest in AI and accessibility technologies.' 
-        : 'Professor of Computer Science with 15 years of experience in education technology.',
-      notificationsEnabled: true,
-      darkModeEnabled: false
-    };
-    
-    setProfileData(fetchedData);
-  }, [userRole]);
+    if (profile) {
+      setProfileData({
+        firstName: profile.first_name || '',
+        lastName: profile.last_name || '',
+        email: user?.email || '',
+        role: profile.role || '',
+        bio: profile.bio || '',
+        notificationsEnabled: true, // These could be stored in the profiles table
+        darkModeEnabled: false
+      });
+    }
+  }, [profile, user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -63,20 +87,83 @@ const Profile = () => {
     }));
   };
 
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
+    if (!user?.id) return;
+    
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      setEditMode(false);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          first_name: profileData.firstName,
+          last_name: profileData.lastName,
+          bio: profileData.bio,
+          // We don't update role here as it should generally be managed elsewhere
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
       
+      if (error) throw error;
+      
+      setEditMode(false);
       toast({
         title: "Profile Updated",
         description: "Your profile has been successfully updated.",
       });
-    }, 1000);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        variant: 'destructive',
+        title: "Update Failed",
+        description: "There was an error updating your profile.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  // Fetch progress statistics for students
+  const { data: progressStats } = useQuery({
+    queryKey: ['progress', user?.id],
+    queryFn: async () => {
+      if (!user?.id || profileData.role !== 'student') return null;
+      
+      const { data, error } = await supabase
+        .from('progress_tracking')
+        .select('*, learning_content(*)')
+        .eq('student_id', user.id);
+        
+      if (error) throw error;
+      
+      return data;
+    },
+    enabled: !!user?.id && profileData.role === 'student',
+  });
+
+  // Calculate progress metrics
+  const completedContent = progressStats?.filter(item => item.is_completed).length || 0;
+  const totalContent = progressStats?.length || 0;
+  const completionPercentage = totalContent ? Math.round((completedContent / totalContent) * 100) : 0;
+  
+  // Calculate hours studied (mock data)
+  const hoursStudied = progressStats?.reduce((total, item) => {
+    const content = item.learning_content;
+    return total + (content?.duration || 0);
+  }, 0) || 0;
+
+  if (isLoadingProfile) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-[60vh]">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading profile...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -164,7 +251,7 @@ const Profile = () => {
                       type="email"
                       value={profileData.email}
                       onChange={handleInputChange}
-                      disabled={!editMode}
+                      disabled={true} // Email is managed by auth system, not editable here
                     />
                   </div>
                   
@@ -215,7 +302,7 @@ const Profile = () => {
                     />
                   </div>
 
-                  {userRole === 'student' && (
+                  {profileData.role === 'student' && (
                     <>
                       <Separator />
                       <div className="space-y-3">
@@ -223,9 +310,9 @@ const Profile = () => {
                         <div className="space-y-2">
                           <div className="flex justify-between text-sm">
                             <span>Total Content Completed</span>
-                            <span className="font-medium">68%</span>
+                            <span className="font-medium">{completionPercentage}%</span>
                           </div>
-                          <Progress value={68} className="h-2" />
+                          <Progress value={completionPercentage} className="h-2" />
                         </div>
                         
                         <div className="pt-2 grid grid-cols-2 gap-2">
@@ -234,7 +321,7 @@ const Profile = () => {
                               <Clock className="h-4 w-4 text-primary" />
                               <span className="text-xs font-medium">Hours Studied</span>
                             </div>
-                            <p className="text-xl font-semibold">87</p>
+                            <p className="text-xl font-semibold">{hoursStudied}</p>
                           </div>
                           
                           <div className="bg-muted/40 p-3 rounded-lg">
@@ -242,14 +329,14 @@ const Profile = () => {
                               <BookOpen className="h-4 w-4 text-primary" />
                               <span className="text-xs font-medium">Courses</span>
                             </div>
-                            <p className="text-xl font-semibold">12</p>
+                            <p className="text-xl font-semibold">{totalContent}</p>
                           </div>
                         </div>
                       </div>
                     </>
                   )}
                   
-                  {userRole === 'teacher' && (
+                  {profileData.role === 'teacher' && (
                     <>
                       <Separator />
                       <div className="space-y-3">
