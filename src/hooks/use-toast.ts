@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { createContext, useContext } from 'react';
 import type * as ToastPrimitives from '@radix-ui/react-toast';
 
-import { toast as sonner } from 'sonner';
+import { toast as sonnerToast } from 'sonner';
 
 type ToastProps = React.ComponentPropsWithoutRef<typeof ToastPrimitives.Root> & {
   title?: React.ReactNode;
@@ -37,14 +37,16 @@ export const useToast = () => {
 
   if (!context) {
     const toast = (props: ToastProps) => {
-      sonner({
-        ...props,
+      sonnerToast(props.title as string, {
+        description: props.description,
+        action: props.action,
+        variant: props.variant,
       });
     };
 
     return {
       toast,
-      dismiss: sonner.dismiss,
+      dismiss: sonnerToast.dismiss,
     };
   }
 
@@ -52,7 +54,9 @@ export const useToast = () => {
 };
 
 export const toast = (props: ToastProps) => {
-  sonner({
-    ...props,
+  sonnerToast(props.title as string, {
+    description: props.description,
+    action: props.action,
+    variant: props.variant,
   });
 };

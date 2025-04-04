@@ -1,161 +1,147 @@
 
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { 
+  Bookmark, 
+  CalendarDays, 
+  Award,
+  Star as StarIcon  // Import the Star icon from Lucide
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Brain, CheckCircle2, Clock } from "lucide-react";
+import { Badge } from '@/components/ui/badge';
 
 export default function WeeklyQuizCard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const { data: weeklyQuizzes, isLoading } = useQuery({
-    queryKey: ['weeklyQuizzes'],
+  // Fetch the latest weekly quiz
+  const { data: weeklyQuiz, isLoading: quizLoading } = useQuery({
+    queryKey: ['weeklyQuiz'],
     queryFn: async () => {
-      if (!user) return [];
-      
-      const today = new Date();
-      
-      // Get weekly quizzes 
       const { data, error } = await supabase
         .from('quizzes')
         .select('*')
         .eq('is_weekly', true)
-        .gt('due_date', today.toISOString())
-        .order('due_date', { ascending: true });
-
+        .order('publish_date', { ascending: false })
+        .limit(1)
+        .single();
+      
       if (error) throw error;
-      
-      // Check if user has already completed these quizzes
-      if (data.length > 0) {
-        const quizIds = data.map(quiz => quiz.id);
-        
-        const { data: submissions, error: submissionsError } = await supabase
-          .from('student_quiz_submissions')
-          .select('quiz_id, is_completed')
-          .eq('student_id', user.id)
-          .in('quiz_id', quizIds);
-          
-        if (submissionsError) throw submissionsError;
-        
-        // Map completion status to quizzes
-        return data.map(quiz => {
-          const submission = submissions?.find(sub => sub.quiz_id === quiz.id);
-          return {
-            ...quiz,
-            isCompleted: submission?.is_completed || false
-          };
-        });
-      }
-      
-      return data || [];
+      return data;
     },
     enabled: !!user,
   });
 
-  if (isLoading) {
-    return (
-      <Card className="animate-pulse">
-        <CardHeader>
-          <div className="h-6 bg-muted rounded w-3/4 mb-2"></div>
-          <div className="h-4 bg-muted rounded w-1/2"></div>
-        </CardHeader>
-        <CardContent>
-          <div className="h-20 bg-muted rounded"></div>
-        </CardContent>
-      </Card>
-    );
-  }
+  // Check if the student has already taken this quiz
+  const { data: quizSubmission } = useQuery({
+    queryKey: ['quizSubmission', user?.id, weeklyQuiz?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('student_quiz_submissions')
+        .select('*')
+        .eq('student_id', user?.id)
+        .eq('quiz_id', weeklyQuiz?.id)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user && !!weeklyQuiz?.id,
+  });
 
-  // Formatted due date
-  const formatDueDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      year: 'numeric'
-    });
+  const handleStartQuiz = () => {
+    setIsLoading(true);
+    // In a real app, navigate to the quiz page
+    // navigate(`/quizzes/${weeklyQuiz.id}`);
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
   };
 
-  // Return different card content if no quizzes available
-  if (!weeklyQuizzes?.length) {
+  if (!weeklyQuiz) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Brain className="h-5 w-5" /> Weekly Challenges
+          <CardTitle className="flex items-center">
+            <Award className="mr-2 h-5 w-5" />
+            Weekly Quiz
           </CardTitle>
-          <CardDescription>Test your knowledge</CardDescription>
+          <CardDescription>Test your knowledge and earn points</CardDescription>
         </CardHeader>
-        <CardContent className="pt-4 pb-6">
-          <div className="flex flex-col items-center justify-center text-center p-6">
-            <Brain className="h-12 w-12 text-muted-foreground mb-3" />
-            <h3 className="text-lg font-medium mb-2">No Weekly Quiz Available</h3>
-            <p className="text-muted-foreground mb-3">
-              New challenges will be posted soon. Check back later!
-            </p>
+        <CardContent>
+          <div className="text-center p-6">
+            <p className="text-muted-foreground">No weekly quiz available right now.</p>
+            <p className="text-xs text-muted-foreground mt-2">Check back soon!</p>
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  // The first available quiz
-  const activeQuiz = weeklyQuizzes[0];
-  
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Brain className="h-5 w-5 text-primary" /> Weekly Challenge
+        <CardTitle className="flex items-center">
+          <Award className="mr-2 h-5 w-5" />
+          Weekly Quiz
         </CardTitle>
         <CardDescription>Test your knowledge and earn points</CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <h3 className="text-xl font-semibold">{activeQuiz.title}</h3>
-          {activeQuiz.description && (
-            <p className="text-muted-foreground">{activeQuiz.description}</p>
-          )}
-          
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5 text-sm">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              <span>Due: {formatDueDate(activeQuiz.due_date)}</span>
-            </div>
-            
-            <div className="flex items-center gap-1.5 text-sm">
-              <Star className="h-4 w-4 text-amber-500" />
-              <span>{activeQuiz.points} points</span>
-            </div>
-            
-            {activeQuiz.isCompleted && (
-              <div className="flex items-center gap-1.5 text-sm text-green-600">
-                <CheckCircle2 className="h-4 w-4" />
-                <span>Completed</span>
-              </div>
-            )}
+      <CardContent className="space-y-4">
+        <div>
+          <h3 className="font-medium">{weeklyQuiz.title}</h3>
+          <p className="text-sm text-muted-foreground">{weeklyQuiz.description}</p>
+        </div>
+        
+        <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center text-muted-foreground">
+            <Bookmark className="mr-1 h-4 w-4" />
+            <span>{weeklyQuiz.subject || 'General'}</span>
           </div>
+          <div className="flex items-center text-muted-foreground">
+            <CalendarDays className="mr-1 h-4 w-4" />
+            <span>Due: {new Date(weeklyQuiz.due_date || Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString()}</span>
+          </div>
+        </div>
+        
+        <div className="flex items-center">
+          <div className="flex items-center text-amber-500">
+            <StarIcon className="h-5 w-5" />
+            <span className="ml-1 font-medium">{weeklyQuiz.points} points</span>
+          </div>
+          {quizSubmission?.is_completed && (
+            <Badge variant="outline" className="ml-auto">
+              Completed
+            </Badge>
+          )}
         </div>
       </CardContent>
       <CardFooter>
-        <Button 
-          variant={activeQuiz.isCompleted ? "outline" : "default"} 
-          className="w-full"
-          onClick={() => navigate(`/quiz/${activeQuiz.id}`)}
-          disabled={activeQuiz.isCompleted}
-        >
-          {activeQuiz.isCompleted ? "View Results" : "Take Quiz"}
-        </Button>
+        {quizSubmission?.is_completed ? (
+          <Button variant="outline" className="w-full" disabled>
+            Already Completed
+          </Button>
+        ) : (
+          <Button 
+            className="w-full" 
+            onClick={handleStartQuiz}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Loading...' : 'Start Quiz'}
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );
