@@ -9,29 +9,43 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-// Enable Supabase Realtime functionality for learning_content table
+// Enable Supabase Realtime functionality
 const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   realtime: {
     params: {
       eventsPerSecond: 10,
     },
   },
+  db: {
+    schema: 'public',
+  },
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
 });
 
 // Run this statement to enable realtime on all tables
 (async () => {
-  // Enable realtime for specific tables
-  await supabase.channel('custom-all-channel')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, payload => {
-      console.log('Change received!', payload);
-    })
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'learning_content' }, payload => {
-      console.log('Learning content changed:', payload);
-    })
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, payload => {
-      console.log('Profiles changed:', payload);
-    })
-    .subscribe();
+  try {
+    // Enable realtime for specific tables with error handling
+    const channel = supabase.channel('custom-all-channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, payload => {
+        console.log('Message change received!', payload);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'learning_content' }, payload => {
+        console.log('Learning content changed:', payload);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, payload => {
+        console.log('Profiles changed:', payload);
+      });
+    
+    const status = await channel.subscribe();
+    console.log('Supabase realtime subscription status:', status);
+  } catch (error) {
+    console.error('Error setting up realtime subscriptions:', error);
+  }
 })();
 
 export { supabase };

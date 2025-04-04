@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -79,22 +78,29 @@ const Messages = () => {
     },
   });
 
-  // Fetch all users for new message form
+  // Fetch all users for new message form - IMPROVED: Better error handling and always enabled
   const { data: users, isLoading: usersLoading } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      if (!user) return [];
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .neq('id', user.id);  // Don't include the current user
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .neq('id', user?.id || '');
+          
+        if (error) {
+          console.error("Error fetching users:", error);
+          throw error;
+        }
         
-      if (error) throw error;
-      
-      return data || [];
+        console.log("Fetched users:", data?.length || 0);
+        return data || [];
+      } catch (err) {
+        console.error("Failed to fetch users:", err);
+        throw err;
+      }
     },
-    enabled: !!user,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
   
   // Fetch conversations (unique users the current user has messaged with)
@@ -269,6 +275,9 @@ const Messages = () => {
     // Reset form and close sheet
     form.reset();
     setIsSheetOpen(false);
+    
+    // Select the new recipient as active contact
+    setActiveContactId(values.recipient);
   };
   
   // Handle sending a message in active conversation
@@ -350,6 +359,13 @@ const Messages = () => {
     };
   }, [user, activeContactId, queryClient]);
 
+  // Debug logs to help troubleshoot
+  useEffect(() => {
+    if (users) {
+      console.log(`Available users for messaging: ${users.length}`);
+    }
+  }, [users]);
+
   return (
     <DashboardLayout>
       <div className="h-full flex flex-col">
@@ -387,20 +403,22 @@ const Messages = () => {
                                   <SelectValue placeholder="Select recipient" />
                                 </SelectTrigger>
                               </FormControl>
-                              <SelectContent>
+                              <SelectContent className="max-h-[300px]">
                                 {usersLoading ? (
                                   <div className="flex items-center justify-center p-4">
                                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
                                     <span>Loading users...</span>
                                   </div>
                                 ) : users && users.length > 0 ? (
-                                  users.map((user) => (
-                                    <SelectItem key={user.id} value={user.id}>
-                                      {`${user.first_name || ''} ${user.last_name || ''}`.trim() || 'User'} ({user.role})
+                                  users.map((profile) => (
+                                    <SelectItem key={profile.id} value={profile.id}>
+                                      {`${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'User'} ({profile.role})
                                     </SelectItem>
                                   ))
                                 ) : (
-                                  <div className="p-4 text-center text-muted-foreground">No users found</div>
+                                  <div className="p-4 text-center text-muted-foreground">
+                                    No other users found
+                                  </div>
                                 )}
                               </SelectContent>
                             </Select>
@@ -428,9 +446,9 @@ const Messages = () => {
                       <Button 
                         type="submit" 
                         className="w-full" 
-                        disabled={sendMessageMutation.isPending}
+                        disabled={sendMessageMutation?.isPending}
                       >
-                        {sendMessageMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {sendMessageMutation?.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Send Message
                       </Button>
                     </form>
@@ -554,16 +572,12 @@ const Messages = () => {
                       )}>
                         <div className={cn(
                           "max-w-[70%] rounded-lg p-3",
-                          message.sender_id === user?.id 
-                            ? "bg-primary text-primary-foreground" 
-                            : "bg-muted"
+                          message.sender_id === user?.id ? "bg-primary text-primary-foreground" : "bg-muted"
                         )}>
                           <p>{message.content}</p>
                           <div className={cn(
                             "text-xs mt-1 flex items-center gap-1",
-                            message.sender_id === user?.id 
-                              ? "text-primary-foreground/70 justify-end" 
-                              : "text-muted-foreground"
+                            message.sender_id === user?.id ? "text-primary-foreground/70 justify-end" : "text-muted-foreground"
                           )}>
                             {formatMessageTime(message.created_at)}
                             {message.sender_id === user?.id && (
