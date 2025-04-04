@@ -13,6 +13,10 @@ declare global {
     SpeechRecognition: new () => SpeechRecognition;
     webkitSpeechRecognition: new () => SpeechRecognition;
   }
+  
+  interface HTMLVideoElement {
+    captureStream(): MediaStream;
+  }
 }
 
 interface SpeechRecognitionEvent extends Event {
@@ -147,22 +151,6 @@ const VideoCaptioner = () => {
   }, [isProcessing]);
 
   useEffect(() => {
-    if (!HTMLVideoElement.prototype.captureStream) {
-      HTMLVideoElement.prototype.captureStream = function() {
-        console.warn("Video captureStream not supported in this browser. Using fallback.");
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = this.videoWidth;
-        canvas.height = this.videoHeight;
-        
-        if (ctx) {
-          ctx.drawImage(this, 0, 0, canvas.width, canvas.height);
-        }
-        
-        return canvas.captureStream();
-      };
-    }
-
     const video = videoRef.current;
     if (!video) return;
 
