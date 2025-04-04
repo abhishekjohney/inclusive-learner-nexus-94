@@ -1,8 +1,7 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Video, FileText, Mic, Calendar, Captions, Translate, MessageSquare } from "lucide-react";
+import { ArrowRight, Video, FileText, Mic, Calendar, Captions, Languages, MessageSquare } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -181,7 +180,7 @@ const Index = () => {
                 
                 <div className="flex flex-col gap-2">
                   <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Translate className="h-6 w-6 text-primary" />
+                    <Languages className="h-6 w-6 text-primary" />
                   </div>
                   <h3 className="text-xl font-bold">Sign Language</h3>
                   <p className="text-muted-foreground">

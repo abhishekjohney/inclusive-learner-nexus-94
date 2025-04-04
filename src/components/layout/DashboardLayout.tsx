@@ -15,7 +15,7 @@ import {
   Users, 
   Video,
   Captions,
-  Translate
+  Languages
 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 
@@ -65,7 +65,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         { name: 'Dashboard', icon: <Book size={20} />, path: '/dashboard' },
         { name: 'Learning Materials', icon: <Video size={20} />, path: '/materials' },
         { name: 'Live Captions', icon: <Captions size={20} />, path: '/speech-to-text' },
-        { name: 'Sign Language', icon: <Translate size={20} />, path: '/sign-language' },
+        { name: 'Sign Language', icon: <Languages size={20} />, path: '/sign-language' },
         { name: 'Messages', icon: <MessageSquare size={20} />, path: '/messages' },
         { name: 'Profile', icon: <User size={20} />, path: '/profile' },
       ];

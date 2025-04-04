@@ -1,11 +1,10 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { SendHorizonal, Paperclip, Mic, MicOff, Translate } from "lucide-react";
+import { SendHorizonal, Paperclip, Mic, MicOff, Languages } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Messages = () => {
@@ -66,7 +65,6 @@ const Messages = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   
-  // For auto-scrolling when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -74,7 +72,6 @@ const Messages = () => {
   const handleSendMessage = () => {
     if (inputValue.trim() === '') return;
     
-    // Add new message
     const newMessage = {
       id: Date.now().toString(),
       sender: 'student',
@@ -85,7 +82,6 @@ const Messages = () => {
     setMessages([...messages, newMessage]);
     setInputValue('');
     
-    // Simulate teacher's response after a delay
     setTimeout(() => {
       const teacherResponse = {
         id: Date.now().toString(),
@@ -149,7 +145,6 @@ const Messages = () => {
     <DashboardLayout>
       <div className="h-[calc(100vh-10rem)]">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 h-full">
-          {/* Conversations sidebar */}
           <div className="md:col-span-1 border rounded-lg overflow-hidden flex flex-col bg-white dark:bg-gray-900">
             <div className="p-4 border-b">
               <h2 className="font-semibold text-lg">Messages</h2>
@@ -190,7 +185,6 @@ const Messages = () => {
             </ScrollArea>
           </div>
           
-          {/* Message area */}
           <div className="md:col-span-3 border rounded-lg overflow-hidden flex flex-col bg-white dark:bg-gray-900">
             <div className="p-4 border-b flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -214,7 +208,7 @@ const Messages = () => {
                   className={useSignLanguage ? "bg-primary/10 text-primary" : ""}
                   onClick={toggleSignLanguage}
                 >
-                  <Translate className="h-4 w-4 mr-1" />
+                  <Languages className="h-4 w-4 mr-1" />
                   {useSignLanguage ? "Sign Language: ON" : "Sign Language"}
                 </Button>
               )}
