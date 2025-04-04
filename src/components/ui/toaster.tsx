@@ -1,20 +1,25 @@
-import {
-  Toast,
-  ToastClose,
-  ToastDescription,
-  ToastProvider,
-  ToastTitle,
-  ToastViewport,
-} from "@/components/ui/toast"
-import { useToast } from "@/hooks/use-toast"
+
+import { Toaster as SonnerToaster } from "sonner";
+import { useTheme } from "next-themes";
 
 export function Toaster() {
-  const { toast, dismiss } = useToast()
+  const { theme = "system" } = useTheme();
 
   return (
-    <ToastProvider>
-      {/* Toaster implementation simplified - uses sonner directly */}
-      <ToastViewport />
-    </ToastProvider>
-  )
+    <SonnerToaster
+      theme={theme as "system" | "dark" | "light"}
+      className="toaster group"
+      toastOptions={{
+        classNames: {
+          toast:
+            "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
+          description: "group-[.toast]:text-muted-foreground",
+          actionButton:
+            "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
+          cancelButton:
+            "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
+        },
+      }}
+    />
+  );
 }

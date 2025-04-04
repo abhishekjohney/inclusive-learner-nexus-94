@@ -1,62 +1,66 @@
 
-import { useEffect, useState } from 'react';
-import { createContext, useContext } from 'react';
-import type * as ToastPrimitives from '@radix-ui/react-toast';
-
 import { toast as sonnerToast } from 'sonner';
+import type * as ToastPrimitives from '@radix-ui/react-toast';
 
 type ToastProps = React.ComponentPropsWithoutRef<typeof ToastPrimitives.Root> & {
   title?: React.ReactNode;
   description?: React.ReactNode;
   action?: React.ReactNode;
+  // Map variant to sonner's toast type property
   variant?: 'default' | 'destructive';
 };
 
 type ToastActionElement = React.ReactElement<typeof ToastPrimitives.Action>;
 
-type Toast = {
-  id: string;
-  title?: React.ReactNode;
-  description?: React.ReactNode;
-  action?: ToastActionElement;
-  variant?: 'default' | 'destructive';
-};
-
-const ToastContext = createContext<{
-  toasts: Toast[];
-  toast: (props: ToastProps) => void;
-  dismiss: (toastId?: string) => void;
-}>({
-  toasts: [],
-  toast: () => {},
-  dismiss: () => {},
-});
-
+// Set up a consistent interface for our toast hook
 export const useToast = () => {
-  const context = useContext(ToastContext);
-
-  if (!context) {
-    const toast = (props: ToastProps) => {
-      sonnerToast(props.title as string, {
-        description: props.description,
+  const toast = (props: ToastProps) => {
+    // Map variant to sonner's toast type
+    let toastType: 'default' | 'error' = 'default';
+    
+    if (props.variant === 'destructive') {
+      toastType = 'error';
+    }
+    
+    // Use the appropriate sonner toast function based on type
+    if (toastType === 'error') {
+      sonnerToast.error(props.title as string, {
+        description: props.description as string,
         action: props.action,
-        variant: props.variant,
       });
-    };
+    } else {
+      sonnerToast(props.title as string, {
+        description: props.description as string,
+        action: props.action,
+      });
+    }
+  };
 
-    return {
-      toast,
-      dismiss: sonnerToast.dismiss,
-    };
-  }
-
-  return context;
+  return {
+    toast,
+    dismiss: sonnerToast.dismiss,
+  };
 };
 
+// Export a standalone toast function as well
 export const toast = (props: ToastProps) => {
-  sonnerToast(props.title as string, {
-    description: props.description,
-    action: props.action,
-    variant: props.variant,
-  });
+  // Map variant to sonner's toast type
+  let toastType: 'default' | 'error' = 'default';
+  
+  if (props.variant === 'destructive') {
+    toastType = 'error';
+  }
+  
+  // Use the appropriate sonner toast function based on type
+  if (toastType === 'error') {
+    sonnerToast.error(props.title as string, {
+      description: props.description as string,
+      action: props.action,
+    });
+  } else {
+    sonnerToast(props.title as string, {
+      description: props.description as string,
+      action: props.action,
+    });
+  }
 };
