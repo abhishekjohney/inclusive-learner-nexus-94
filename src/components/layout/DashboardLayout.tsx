@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { 
   Bell, 
@@ -27,6 +27,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -51,6 +52,10 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     });
     
     navigate('/login');
+  };
+
+  const isActive = (path: string) => {
+    return location.pathname === path;
   };
 
   const navigationItems = userRole === 'teacher' 
@@ -92,7 +97,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               {navigationItems.map((item) => (
                 <Button
                   key={item.name}
-                  variant="ghost"
+                  variant={isActive(item.path) ? "secondary" : "ghost"}
                   className={`w-full justify-start ${
                     isSidebarOpen ? 'px-3' : 'px-0 justify-center'
                   }`}
@@ -171,9 +176,15 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               </div>
               
               <div className="flex items-center space-x-2">
-                <div className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center"
+                  onClick={() => navigate('/profile')}
+                  aria-label="Go to profile"
+                >
                   {userRole === 'teacher' ? 'T' : 'S'}
-                </div>
+                </Button>
                 {isSidebarOpen && (
                   <div className="hidden md:block text-sm">
                     <p className="font-medium">{userRole === 'teacher' ? 'Teacher' : 'Student'}</p>

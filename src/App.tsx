@@ -11,6 +11,7 @@ import UploadContent from "./pages/UploadContent";
 import Messages from "./pages/Messages";
 import SpeechToTextPage from "./pages/SpeechToTextPage";
 import SignLanguageTranslatorPage from "./pages/SignLanguageTranslatorPage";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import { useEffect } from "react";
 
@@ -97,6 +98,7 @@ const App = () => {
             
             {/* Shared routes */}
             <Route path="/messages" element={<RequireAuth><Messages /></RequireAuth>} />
+            <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
