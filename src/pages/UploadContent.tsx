@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, MicSquare, FileText, Calendar, CheckCircle } from "lucide-react";
+import { Upload, Mic, FileText, Calendar, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const UploadContent = () => {
@@ -54,7 +53,7 @@ const UploadContent = () => {
               <span>Notes</span>
             </TabsTrigger>
             <TabsTrigger value="voice" className="flex items-center gap-2">
-              <MicSquare className="h-4 w-4" />
+              <Mic className="h-4 w-4" />
               <span>Voice Notes</span>
             </TabsTrigger>
             <TabsTrigger value="circular" className="flex items-center gap-2">
@@ -213,7 +212,7 @@ const UploadContent = () => {
                     <Label>Record or Upload</Label>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="border rounded-md p-4 text-center hover:bg-muted/50 transition cursor-pointer">
-                        <MicSquare className="h-8 w-8 text-primary mx-auto mb-2" />
+                        <Mic className="h-8 w-8 text-primary mx-auto mb-2" />
                         <p className="font-medium">Record Now</p>
                         <p className="text-xs text-muted-foreground">Record directly from your browser</p>
                       </div>
@@ -229,7 +228,7 @@ const UploadContent = () => {
                   <div className="border rounded-md p-4 hidden">
                     <div className="flex justify-center space-x-4">
                       <Button size="icon" variant="outline" className="rounded-full h-12 w-12">
-                        <MicSquare className="h-6 w-6" />
+                        <Mic className="h-6 w-6" />
                       </Button>
                     </div>
                     <div className="mt-4">

@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Video, FileText, MicSquare, Calendar, Book, User, MessageSquare, Star, Clock, Download } from "lucide-react";
+import { Video, FileText, Mic, Calendar, Book, User, MessageSquare, Star, Clock, Download } from "lucide-react";
 
 const StudentDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -40,7 +39,7 @@ const StudentDashboard = () => {
       subject: 'English Literature',
       date: '2 days ago',
       duration: '15 minutes',
-      icon: MicSquare,
+      icon: Mic,
     },
     {
       id: '4',
