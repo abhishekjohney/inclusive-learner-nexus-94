@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import SpeechToTextPage from "./pages/SpeechToTextPage";
+import SignLanguageTranslatorPage from "./pages/SignLanguageTranslatorPage";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/features" element={<Features />} />
           <Route path="/features/speech-to-text" element={<SpeechToTextPage />} />
+          <Route path="/features/sign-language" element={<SignLanguageTranslatorPage />} />
           <Route path="/courses" element={<Courses />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/login" element={<Login />} />

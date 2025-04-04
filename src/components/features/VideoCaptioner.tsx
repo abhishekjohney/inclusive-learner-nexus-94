@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Video, Captions, CaptionsOff, CloudDownload, Save } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
-// Add type definitions for SpeechRecognition
 declare global {
   interface Window {
     SpeechRecognition: new () => SpeechRecognition;
@@ -84,7 +82,6 @@ const VideoCaptioner = () => {
   const [activeCaptionIndex, setActiveCaptionIndex] = useState(-1);
 
   useEffect(() => {
-    // Initialize speech recognition
     if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       recognitionRef.current = new SpeechRecognition();
@@ -104,16 +101,14 @@ const VideoCaptioner = () => {
           if (event.results[i].isFinal) {
             finalTranscript += transcript + ' ';
             
-            // Create a new caption entry with more precise timing
             const captionEntry: CaptionEntry = {
               text: transcript,
-              startTime: currentTime - (transcript.length * 0.1), // Adjust timing based on text length
+              startTime: currentTime - (transcript.length * 0.1),
               endTime: currentTime
             };
             
             setGeneratedCaptions(prev => {
               const updated = [...prev];
-              // Update the end time of the previous caption
               if (updated.length > 0) {
                 updated[updated.length - 1].endTime = captionEntry.startTime;
               }
@@ -136,7 +131,6 @@ const VideoCaptioner = () => {
 
       recognitionRef.current.onend = () => {
         if (isProcessing) {
-          // Restart recognition if it ended while we're still processing
           recognitionRef.current?.start();
         }
       };
@@ -152,15 +146,29 @@ const VideoCaptioner = () => {
     };
   }, [isProcessing]);
 
-  // Add video time update handler
   useEffect(() => {
+    if (!HTMLVideoElement.prototype.captureStream) {
+      HTMLVideoElement.prototype.captureStream = function() {
+        console.warn("Video captureStream not supported in this browser. Using fallback.");
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = this.videoWidth;
+        canvas.height = this.videoHeight;
+        
+        if (ctx) {
+          ctx.drawImage(this, 0, 0, canvas.width, canvas.height);
+        }
+        
+        return canvas.captureStream();
+      };
+    }
+
     const video = videoRef.current;
     if (!video) return;
 
     const handleTimeUpdate = () => {
       setCurrentTime(video.currentTime);
       
-      // Find the active caption based on current video time
       const index = generatedCaptions.findIndex(
         caption => video.currentTime >= caption.startTime && video.currentTime <= caption.endTime
       );
@@ -201,9 +209,7 @@ const VideoCaptioner = () => {
     setError(null);
     
     try {
-      // Check if speech recognition is available
       if (!recognitionRef.current) {
-        // Fallback to simulated captions if speech recognition is not available
         console.log('Speech recognition not available, using simulated captions');
         const simulatedCaptions = [
           "This is a simulated caption for demonstration purposes.",
@@ -219,10 +225,8 @@ const VideoCaptioner = () => {
         
         setCurrentCaption(simulatedCaptions[0]);
         
-        // Play the video
         videoRef.current.play();
         
-        // Set up time-based caption updates
         const video = videoRef.current;
         let currentIndex = 0;
         
@@ -238,7 +242,6 @@ const VideoCaptioner = () => {
         
         video.addEventListener('timeupdate', timeUpdateHandler);
         
-        // Stop when video ends
         video.onended = () => {
           video.removeEventListener('timeupdate', timeUpdateHandler);
           setIsProcessing(false);
@@ -247,33 +250,26 @@ const VideoCaptioner = () => {
         return;
       }
       
-      // Create a MediaStream from the video element
       const video = videoRef.current;
       const stream = video.captureStream();
       
-      // Get the audio track from the stream
       const audioTrack = stream.getAudioTracks()[0];
       
       if (!audioTrack) {
         throw new Error("No audio track found in the video");
       }
       
-      // Create a new MediaStream with just the audio track
       const audioStream = new MediaStream([audioTrack]);
       
-      // Create an AudioContext to process the audio
       const audioContext = new AudioContext();
       const source = audioContext.createMediaStreamSource(audioStream);
       const destination = audioContext.createMediaStreamDestination();
       source.connect(destination);
       
-      // Start speech recognition
       recognitionRef.current.start();
       
-      // Play the video
       video.play();
       
-      // Stop recognition when video ends
       video.onended = () => {
         if (recognitionRef.current) {
           recognitionRef.current.stop();
@@ -293,7 +289,6 @@ const VideoCaptioner = () => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  // Auto-save function
   const autoSaveCaptions = () => {
     if (generatedCaptions.length === 0) return;
 
@@ -304,7 +299,6 @@ const VideoCaptioner = () => {
     localStorage.setItem('videoCaptions', notesText);
     setAutoSaveStatus("Auto-saved");
     
-    // Clear status after 2 seconds
     if (autoSaveTimeoutRef.current) {
       clearTimeout(autoSaveTimeoutRef.current);
     }
@@ -313,7 +307,6 @@ const VideoCaptioner = () => {
     }, 2000);
   };
 
-  // Load saved captions
   useEffect(() => {
     const savedCaptions = localStorage.getItem('videoCaptions');
     if (savedCaptions) {
@@ -337,7 +330,6 @@ const VideoCaptioner = () => {
     }
   }, []);
 
-  // Auto-save when captions change
   useEffect(() => {
     autoSaveCaptions();
   }, [generatedCaptions]);
@@ -420,7 +412,6 @@ const VideoCaptioner = () => {
               ) : (
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Video Player */}
                     <div className="space-y-4">
                       <video 
                         src={videoSource} 
@@ -446,7 +437,6 @@ const VideoCaptioner = () => {
                       </div>
                     </div>
 
-                    {/* Live Captions */}
                     <div className="bg-gray-50 rounded-lg p-4 h-[300px] overflow-y-auto">
                       <h3 className="text-lg font-semibold mb-2">Live Captions</h3>
                       <div className="space-y-2">
@@ -497,7 +487,6 @@ const VideoCaptioner = () => {
         </TabsContent>
       </Tabs>
       
-      {/* Generated Transcript */}
       {generatedCaptions.length > 0 && (
         <Card className="mt-8">
           <CardContent className="p-6">
