@@ -1,206 +1,175 @@
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Button } from "@/components/ui/button";
-import { 
-  Bell, 
-  Book, 
-  Headphones, 
-  LogOut, 
-  Menu, 
-  MessageSquare, 
-  Settings, 
-  Upload, 
-  User, 
-  Users, 
-  Video,
-  Captions,
-  Languages
+import { ReactNode, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import {
+  Book,
+  Upload,
+  MessageSquare,
+  Mic,
+  Languages,
+  User,
+  LogOut,
+  Menu,
+  Home
 } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast";
+import { cn } from '@/lib/utils';
 
 interface DashboardLayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
-const DashboardLayout = ({ children }: DashboardLayoutProps) => {
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+export default function DashboardLayout({ children }: DashboardLayoutProps) {
+  const { signOut, userRole } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const { toast } = useToast();
-
-  useEffect(() => {
-    const role = localStorage.getItem('userRole');
-    const isLoggedIn = localStorage.getItem('isLoggedIn');
-    
-    if (!isLoggedIn || !role) {
-      navigate('/login');
-      return;
-    }
-    
-    setUserRole(role);
-  }, [navigate]);
+  const [open, setOpen] = useState(false);
   
-  const handleLogout = () => {
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('isLoggedIn');
+  // Define navigation links based on user role
+  const getNavLinks = () => {
+    const commonLinks = [
+      {
+        title: 'Dashboard',
+        href: '/dashboard',
+        icon: <Home className="h-5 w-5" />
+      },
+      {
+        title: 'Messages',
+        href: '/messages',
+        icon: <MessageSquare className="h-5 w-5" />
+      },
+      {
+        title: 'Profile',
+        href: '/profile',
+        icon: <User className="h-5 w-5" />
+      }
+    ];
     
-    toast({
-      title: "Logged out",
-      description: "You have been successfully logged out.",
-    });
+    const teacherLinks = [
+      {
+        title: 'Upload Content',
+        href: '/upload',
+        icon: <Upload className="h-5 w-5" />
+      }
+    ];
     
-    navigate('/login');
+    const studentLinks = [
+      {
+        title: 'Learning Material',
+        href: '/content',
+        icon: <Book className="h-5 w-5" />
+      },
+      {
+        title: 'Speech to Text',
+        href: '/speech-to-text',
+        icon: <Mic className="h-5 w-5" />
+      },
+      {
+        title: 'Sign Language',
+        href: '/sign-language',
+        icon: <Languages className="h-5 w-5" />
+      }
+    ];
+    
+    return userRole === 'teacher' 
+      ? [...commonLinks, ...teacherLinks]
+      : [...commonLinks, ...studentLinks];
   };
 
-  const isActive = (path: string) => {
-    return location.pathname === path;
+  const handleNavigation = (href: string) => {
+    navigate(href);
+    setOpen(false);
   };
-
-  const navigationItems = userRole === 'teacher' 
-    ? [
-        { name: 'Dashboard', icon: <Users size={20} />, path: '/dashboard' },
-        { name: 'Upload Content', icon: <Upload size={20} />, path: '/upload' },
-        { name: 'My Content', icon: <Book size={20} />, path: '/my-content' },
-        { name: 'Messages', icon: <MessageSquare size={20} />, path: '/messages' },
-        { name: 'Profile', icon: <User size={20} />, path: '/profile' },
-      ]
-    : [
-        { name: 'Dashboard', icon: <Book size={20} />, path: '/dashboard' },
-        { name: 'Learning Materials', icon: <Video size={20} />, path: '/materials' },
-        { name: 'Live Captions', icon: <Captions size={20} />, path: '/speech-to-text' },
-        { name: 'Sign Language', icon: <Languages size={20} />, path: '/sign-language' },
-        { name: 'Messages', icon: <MessageSquare size={20} />, path: '/messages' },
-        { name: 'Profile', icon: <User size={20} />, path: '/profile' },
-      ];
-
-  if (!userRole) return null;
 
   return (
-    <div className="min-h-screen flex">
-      {/* Sidebar */}
-      <aside 
-        className={`bg-white dark:bg-gray-900 border-r border-border transition-all duration-300 ${
-          isSidebarOpen ? 'w-64' : 'w-0 -ml-64 md:w-16 md:ml-0'
-        }`}
-      >
-        <div className="h-full px-3 py-4 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center mb-6 px-2">
-              {isSidebarOpen && (
-                <h2 className="text-xl font-bold text-primary">EduAccess</h2>
-              )}
-            </div>
-            
-            <div className="space-y-1">
-              {navigationItems.map((item) => (
-                <Button
-                  key={item.name}
-                  variant={isActive(item.path) ? "secondary" : "ghost"}
-                  className={`w-full justify-start ${
-                    isSidebarOpen ? 'px-3' : 'px-0 justify-center'
-                  }`}
-                  onClick={() => navigate(item.path)}
-                  title={!isSidebarOpen ? item.name : undefined}
-                  aria-label={item.name}
-                >
-                  <div className="flex items-center">
-                    <span className="mr-2">{item.icon}</span>
-                    {isSidebarOpen && <span>{item.name}</span>}
-                  </div>
-                </Button>
-              ))}
-            </div>
+    <div className="min-h-screen flex flex-col">
+      {/* Mobile Header */}
+      <div className="md:hidden border-b p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-primary">EduAccess</span>
           </div>
           
-          <div className="space-y-1">
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[240px] p-0">
+              <div className="border-b p-4">
+                <span className="font-bold text-primary">EduAccess</span>
+              </div>
+              <nav className="flex flex-col p-2">
+                {getNavLinks().map((link, i) => (
+                  <Button
+                    key={i}
+                    variant="ghost"
+                    className="justify-start mb-1"
+                    onClick={() => handleNavigation(link.href)}
+                  >
+                    {link.icon}
+                    <span className="ml-2">{link.title}</span>
+                  </Button>
+                ))}
+                <Button
+                  variant="ghost"
+                  onClick={signOut}
+                  className="justify-start text-red-500 hover:text-red-500 hover:bg-red-50 mt-4"
+                >
+                  <LogOut className="h-5 w-5" />
+                  <span className="ml-2">Sign out</span>
+                </Button>
+              </nav>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
+      
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar - Desktop only */}
+        <div className="hidden md:flex w-64 flex-col border-r">
+          <div className="border-b p-4">
+            <span className="font-bold text-xl text-primary">EduAccess</span>
+          </div>
+          <nav className="flex-1 p-4 space-y-2">
+            {getNavLinks().map((link, i) => (
+              <Button
+                key={i}
+                variant={location.pathname === link.href ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full justify-start",
+                  location.pathname === link.href && "bg-primary/10"
+                )}
+                onClick={() => navigate(link.href)}
+              >
+                {link.icon}
+                <span className="ml-2">{link.title}</span>
+              </Button>
+            ))}
+          </nav>
+          <div className="p-4 border-t">
             <Button
               variant="ghost"
-              className={`w-full justify-start ${
-                isSidebarOpen ? 'px-3' : 'px-0 justify-center'
-              }`}
-              onClick={() => navigate('/settings')}
-              title={!isSidebarOpen ? 'Settings' : undefined}
-              aria-label="Settings"
+              onClick={signOut}
+              className="w-full justify-start text-red-500 hover:text-red-500 hover:bg-red-50"
             >
-              <div className="flex items-center">
-                <span className="mr-2">
-                  <Settings size={20} />
-                </span>
-                {isSidebarOpen && <span>Settings</span>}
-              </div>
-            </Button>
-            
-            <Button
-              variant="ghost"
-              className={`w-full justify-start ${
-                isSidebarOpen ? 'px-3' : 'px-0 justify-center'
-              }`}
-              onClick={handleLogout}
-              title={!isSidebarOpen ? 'Logout' : undefined}
-              aria-label="Logout"
-            >
-              <div className="flex items-center">
-                <span className="mr-2">
-                  <LogOut size={20} />
-                </span>
-                {isSidebarOpen && <span>Logout</span>}
-              </div>
+              <LogOut className="h-5 w-5" />
+              <span className="ml-2">Sign out</span>
             </Button>
           </div>
         </div>
-      </aside>
-      
-      {/* Main content */}
-      <div className="flex-1 flex flex-col">
-        <header className="bg-white dark:bg-gray-900 border-b border-border">
-          <div className="h-16 px-4 flex items-center justify-between">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              aria-label={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
-            >
-              <Menu size={20} />
-            </Button>
-            
-            <div className="flex items-center space-x-2">
-              <div>
-                <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
-                  <Bell size={20} />
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-white rounded-full text-xs flex items-center justify-center">
-                    3
-                  </span>
-                </Button>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center"
-                  onClick={() => navigate('/profile')}
-                  aria-label="Go to profile"
-                >
-                  {userRole === 'teacher' ? 'T' : 'S'}
-                </Button>
-                {isSidebarOpen && (
-                  <div className="hidden md:block text-sm">
-                    <p className="font-medium">{userRole === 'teacher' ? 'Teacher' : 'Student'}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </header>
         
-        <main className="flex-1 p-4 md:p-6 overflow-auto">
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col overflow-auto">
           {children}
-        </main>
+        </div>
       </div>
     </div>
   );
-};
-
-export default DashboardLayout;
+}
