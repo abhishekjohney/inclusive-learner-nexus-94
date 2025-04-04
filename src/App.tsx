@@ -3,37 +3,107 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
-import Features from "./pages/Features";
-import Courses from "./pages/Courses";
-import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
-import NotFound from "./pages/NotFound";
+import StudentDashboard from "./pages/StudentDashboard";
+import UploadContent from "./pages/UploadContent";
+import Messages from "./pages/Messages";
 import SpeechToTextPage from "./pages/SpeechToTextPage";
 import SignLanguageTranslatorPage from "./pages/SignLanguageTranslatorPage";
+import NotFound from "./pages/NotFound";
+import { useEffect } from "react";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/features" element={<Features />} />
-          <Route path="/features/speech-to-text" element={<SpeechToTextPage />} />
-          <Route path="/features/sign-language" element={<SignLanguageTranslatorPage />} />
-          <Route path="/courses" element={<Courses />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  // Check authentication status on load
+  useEffect(() => {
+    // You'd typically have a more robust auth check here
+    const isLoggedIn = localStorage.getItem('isLoggedIn');
+    const userRole = localStorage.getItem('userRole');
+    
+    console.log('Auth status:', { isLoggedIn, userRole });
+  }, []);
+
+  const RequireAuth = ({ children }: { children: JSX.Element }) => {
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    
+    if (!isLoggedIn) {
+      return <Navigate to="/login" />;
+    }
+    
+    return children;
+  };
+
+  const StudentRoute = ({ children }: { children: JSX.Element }) => {
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    const userRole = localStorage.getItem('userRole');
+    
+    if (!isLoggedIn) {
+      return <Navigate to="/login" />;
+    }
+    
+    if (userRole !== 'student') {
+      return <Navigate to="/dashboard" />;
+    }
+    
+    return children;
+  };
+
+  const TeacherRoute = ({ children }: { children: JSX.Element }) => {
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    const userRole = localStorage.getItem('userRole');
+    
+    if (!isLoggedIn) {
+      return <Navigate to="/login" />;
+    }
+    
+    if (userRole !== 'teacher') {
+      return <Navigate to="/dashboard" />;
+    }
+    
+    return children;
+  };
+
+  const DashboardRedirect = () => {
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    const userRole = localStorage.getItem('userRole');
+    
+    if (!isLoggedIn) {
+      return <Navigate to="/login" />;
+    }
+    
+    return <StudentDashboard />;
+  };
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/dashboard" element={<RequireAuth><DashboardRedirect /></RequireAuth>} />
+            
+            {/* Teacher-specific routes */}
+            <Route path="/upload" element={<TeacherRoute><UploadContent /></TeacherRoute>} />
+            
+            {/* Student-specific routes */}
+            <Route path="/speech-to-text" element={<StudentRoute><SpeechToTextPage /></StudentRoute>} />
+            <Route path="/sign-language" element={<StudentRoute><SignLanguageTranslatorPage /></StudentRoute>} />
+            
+            {/* Shared routes */}
+            <Route path="/messages" element={<RequireAuth><Messages /></RequireAuth>} />
+            
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

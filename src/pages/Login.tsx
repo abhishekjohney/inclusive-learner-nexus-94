@@ -1,164 +1,64 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Github, Mail } from "lucide-react";
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
+import AuthTabs from '@/components/auth/AuthTabs';
 
 const Login = () => {
   return (
-    <div className="flex flex-col min-h-screen">
-      <Header />
-      <main className="flex-1 flex items-center justify-center py-12 md:py-24">
-        <div className="container px-4 md:px-6">
-          <div className="flex flex-col items-center space-y-4 text-center">
-            <Link to="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-              <ArrowLeft className="h-4 w-4" />
-              <span>Back to Home</span>
-            </Link>
-            
-            <div className="space-y-2 max-w-md mx-auto">
-              <h1 className="text-3xl font-bold tracking-tight font-display">Welcome Back</h1>
-              <p className="text-muted-foreground">Sign in to continue your inclusive learning journey</p>
+    <div className="min-h-screen flex flex-col md:flex-row">
+      <div className="md:w-1/2 bg-primary flex items-center justify-center p-8 md:p-12 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+            <defs>
+              <pattern id="gridPattern" width="20" height="20" patternUnits="userSpaceOnUse">
+                <circle cx="10" cy="10" r="1" fill="currentColor" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#gridPattern)" />
+          </svg>
+        </div>
+        
+        <div className="relative z-10 text-white max-w-lg">
+          <h1 className="text-4xl md:text-5xl font-bold mb-6">EduAccess</h1>
+          <p className="text-xl md:text-2xl mb-6">
+            An inclusive learning platform for every student and teacher
+          </p>
+          <div className="space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 mt-1">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+              </div>
+              <p>Educational accessibility tools including sign language translation and live captions</p>
             </div>
             
-            <div className="w-full max-w-md">
-              <Tabs defaultValue="email" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="email">Email</TabsTrigger>
-                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="email" className="animate-fade-in">
-                  <Card className="glass-card border-border/50">
-                    <CardHeader>
-                      <CardTitle>Sign In with Email</CardTitle>
-                      <CardDescription>
-                        Enter your email and password to access your account
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input id="email" type="email" placeholder="example@email.com" required />
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="password">Password</Label>
-                          <Link to="/reset-password" className="text-xs text-primary hover:underline">
-                            Forgot password?
-                          </Link>
-                        </div>
-                        <Input id="password" type="password" required />
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox id="remember" />
-                        <Label htmlFor="remember" className="text-sm font-normal">Remember me</Label>
-                      </div>
-                    </CardContent>
-                    <CardFooter className="flex flex-col gap-4">
-                      <Button className="w-full button-hover">Sign In</Button>
-                      <div className="relative">
-                        <div className="absolute inset-0 flex items-center">
-                          <span className="w-full border-t border-border"></span>
-                        </div>
-                        <div className="relative flex justify-center text-xs uppercase">
-                          <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <Button variant="outline" className="gap-2">
-                          <Github className="h-4 w-4" />
-                          <span>GitHub</span>
-                        </Button>
-                        <Button variant="outline" className="gap-2">
-                          <Mail className="h-4 w-4" />
-                          <span>Google</span>
-                        </Button>
-                      </div>
-                    </CardFooter>
-                  </Card>
-                </TabsContent>
-                
-                <TabsContent value="signup" className="animate-fade-in">
-                  <Card className="glass-card border-border/50">
-                    <CardHeader>
-                      <CardTitle>Create an Account</CardTitle>
-                      <CardDescription>
-                        Join our inclusive learning platform
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="first-name">First Name</Label>
-                          <Input id="first-name" required />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="last-name">Last Name</Label>
-                          <Input id="last-name" required />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="signup-email">Email</Label>
-                        <Input id="signup-email" type="email" placeholder="example@email.com" required />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="signup-password">Password</Label>
-                        <Input id="signup-password" type="password" required />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="confirm-password">Confirm Password</Label>
-                        <Input id="confirm-password" type="password" required />
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox id="terms" required />
-                        <Label htmlFor="terms" className="text-sm font-normal">
-                          I agree to the <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link> and <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
-                        </Label>
-                      </div>
-                    </CardContent>
-                    <CardFooter className="flex flex-col gap-4">
-                      <Button className="w-full button-hover">Create Account</Button>
-                      <div className="relative">
-                        <div className="absolute inset-0 flex items-center">
-                          <span className="w-full border-t border-border"></span>
-                        </div>
-                        <div className="relative flex justify-center text-xs uppercase">
-                          <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <Button variant="outline" className="gap-2">
-                          <Github className="h-4 w-4" />
-                          <span>GitHub</span>
-                        </Button>
-                        <Button variant="outline" className="gap-2">
-                          <Mail className="h-4 w-4" />
-                          <span>Google</span>
-                        </Button>
-                      </div>
-                    </CardFooter>
-                  </Card>
-                </TabsContent>
-              </Tabs>
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 mt-1">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+                </svg>
+              </div>
+              <p>Seamless sharing of videos, notes, voice recordings, and important announcements</p>
             </div>
             
-            <div className="text-sm text-muted-foreground pt-4">
-              <p>
-                By signing in, you agree to our <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link> and <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>.
-              </p>
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 mt-1">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <circle cx="12" cy="10" r="3"></circle>
+                  <path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"></path>
+                </svg>
+              </div>
+              <p>Dedicated student and teacher portals with role-specific features</p>
             </div>
           </div>
         </div>
-      </main>
-      <Footer />
+      </div>
+      
+      <div className="md:w-1/2 flex items-center justify-center p-8">
+        <AuthTabs />
+      </div>
     </div>
   );
 };
